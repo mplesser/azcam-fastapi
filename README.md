@@ -11,9 +11,8 @@ or download from github: https://github.com/mplesser/azcam-fastapi.git.
 ## Uage Example
 
 ```python
-from azcam_fastapi.flask_server import WebServer
+from azcam_fastapi.fastapi_server import WebServer
 webserver = WebServer()
-webserver.templates_folder = azcam.db.systemfolder
 webserver.index = f"index_mysystem.html"
 webserver.start()
 ```
