@@ -25,8 +25,10 @@ from urllib.parse import urlparse
 
 # from flask import Flask, render_template, request, send_from_directory
 import uvicorn
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
 
 import azcam
 
@@ -68,17 +70,11 @@ class WebServer(object):
             name="static",
         )
 
-        @app.get("/")
-        def home():
-            return render_template(self.index)
+        templates = Jinja2Templates(directory=os.path.join(self.root_folder, "templates"))
 
-        @app.get("/faviconXXXX.ico")
-        def favicon():
-            return send_from_directory(
-                os.path.join(app.root_path, "static"),
-                "favicon.ico",
-                mimetype="image/vnd.microsoft.icon",
-            )
+        @app.get("/", response_class=HTMLResponse)
+        def home(request: Request, id: str = "Mike"):
+            return templates.TemplateResponse(self.index, {"request": request, "id": id})
 
         # ******************************************************************************
         # API command - .../api/tool/command
