@@ -11,5 +11,5 @@ data3 = {
     "kwargs": {"parameter": "imagetest", "value": 3333},
 }
 
-r = requests.post("http://localhost:2403/japi", json=data3)
+r = requests.post("http://localhost:2403/japi", json=data2)
 print(r.status_code, r.json())
