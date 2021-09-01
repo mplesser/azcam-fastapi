@@ -2,7 +2,6 @@
 Configure and start fastapi application using uvicorn.
 Import this after all configuration has been completed.
 All API commands suported here must start with ""http://locahost:2402/api/".
-Both GET and POST are supported for /api/.
 
 URL example: "http://locahost:2402/api/instrument/set_filter?filter=1&filter_id=2"
 
@@ -16,17 +15,14 @@ If webserver.return_json is False, then just "data" is returned.
 
 """
 
-import logging
 import os
-import sys
 import threading
-import subprocess
-from urllib.parse import urlparse
 
 # from flask import Flask, render_template, request, send_from_directory
 import uvicorn
-from fastapi import FastAPI, Request
-from fastapi.responses import HTMLResponse
+from fastapi import FastAPI, Request, APIRouter, HTTPException
+
+from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
@@ -46,6 +42,7 @@ class WebServer(object):
 
         self.logcommands = 0
         self.logstatus = 0
+        self.message = ""  # customized message
 
         # port for webserver
         self.port = None
@@ -62,57 +59,59 @@ class WebServer(object):
         # create app
         app = FastAPI()
         self.app = app
+
         self.root_folder = os.path.dirname(__file__)
 
+        # static folder - /static
         app.mount(
             "/static",
             StaticFiles(directory=os.path.join(self.root_folder, "static")),
             name="static",
         )
 
-        templates = Jinja2Templates(directory=os.path.join(self.root_folder, "templates"))
+        # templates folder
+        templates = Jinja2Templates(directory=os.path.dirname(self.index))
 
+        # home - /
         @app.get("/", response_class=HTMLResponse)
-        def home(request: Request, id: str = "Mike"):
-            return templates.TemplateResponse(self.index, {"request": request, "id": id})
+        def home(request: Request):
+            index = os.path.basename(self.index)
+            return templates.TemplateResponse(index, {"request": request, "message": self.message})
 
         # ******************************************************************************
-        # API command - .../api/tool/command
+        # API command - /api/tool/command
         # ******************************************************************************
-        @app.get("/api/<path:command>")
-        @app.post("/api/<path:command>")
-        def api(command):
+        @app.get("/api/{rest_of_path:path}", response_class=JSONResponse)
+        def api(request: Request, rest_of_path: str):
             """
             Remote web api commands. such as: /api/expose or /api/exposure/reset
             """
 
-            url = request.url
+            url = rest_of_path
+            qpars = request.query_params
+
             if self.logcommands:
                 if not ("/get_status" in url or "/watchdog" in url):
                     azcam.log(url, prefix="Web-> ")
 
-            reply = self.web_command(url)
+            reply = self.web_command(url, qpars)
 
             if self.logcommands:
                 if not ("/get_status" in url or "/watchdog" in url):
                     azcam.log(reply, prefix="Web->   ")
 
-            return reply
+            return JSONResponse(reply)
 
         # ******************************************************************************
         # JSON API command - .../api/tool/command
         # ******************************************************************************
-        @app.route("/japi", methods=["GET", "POST"])
-        def japi():
+        @app.post("/japi", response_class=JSONResponse)
+        async def japi(request: Request):
             """
             Remote web api commands using JSON.
             """
 
-            url = request.url
-            azcam.log(url, prefix="Web-> ")
-
-            args = request.get_json()
-            print("args", args)
+            args = await request.json()
 
             toolid = getattr(azcam.db, args["tool"])
             command = getattr(toolid, args["command"])
@@ -127,7 +126,40 @@ class WebServer(object):
                 "data": reply,
             }
 
-            return response
+            return JSONResponse(response)
+
+    def add_router(self, router):
+        """
+        Add router.
+        """
+
+        self.app.include_router(router)
+
+        return
+
+    def test_router(self):
+
+        fake_items_db = {"plumbus": {"name": "Plumbus"}, "gun": {"name": "Portal Gun"}}
+
+        router = APIRouter(
+            prefix="/items",
+            tags=["items"],
+            responses={404: {"description": "Item not found"}},
+        )
+
+        @router.get("/")
+        async def read_items():
+            return fake_items_db
+
+        @router.get("/{item_id}")
+        async def read_item(item_id: str):
+            if item_id not in fake_items_db:
+                raise HTTPException(status_code=404, detail="Item not found")
+            return {"name": fake_items_db[item_id]["name"], "item_id": item_id}
+
+        self.add_router(router)
+
+        return
 
     def stop(self):
         """
@@ -150,53 +182,27 @@ class WebServer(object):
 
         azcam.log(f"Starting webserver - listening on port {self.port}")
 
-        uvicorn.run(self.app)
+        # uvicorn.run(self.app)
 
-        """
-        # turn off development server warning
-        cli = sys.modules["flask.cli"]
-        cli.show_server_banner = lambda *x: None
+        arglist = [self.app]
+        kwargs = {"port": self.port}
 
-        if 1:
-            log1 = logging.getLogger("werkzeug")
-            log1.setLevel(logging.ERROR)
+        thread = threading.Thread(target=uvicorn.run, name="uvicorn", args=arglist, kwargs=kwargs)
+        thread.daemon = True  # terminates when main process exits
+        thread.start()
 
-        # 1 => threaded for command line use (when imported)
-        if 0:
-            self.app.jinja_env.auto_reload = True
-            self.app.config["TEMPLATES_AUTO_RELOAD"] = True
-            self.app.config["JSONIFY_PRETTYPRINT_REGULAR"] = False
-            self.app.config["UPLOAD_FOLDER"] = self.upload_folder
-            self.app.run(debug=True, threaded=False, host="0.0.0.0", port=self.port)
-        else:
-            self.app.jinja_env.auto_reload = True
-            self.app.config["TEMPLATES_AUTO_RELOAD"] = True
-            self.app.config["JSONIFY_PRETTYPRINT_REGULAR"] = True
-            self.app.config["UPLOAD_FOLDER"] = self.upload_folder
-            self.webthread = threading.Thread(
-                target=self.app.run,
-                kwargs={
-                    "debug": False,
-                    "threaded": True,
-                    "host": "0.0.0.0",
-                    "port": self.port,
-                },
-            )
-            self.webthread.daemon = True  # terminates when main process exits
-            self.webthread.start()
-            self.is_running = 1
-        """
+        self.is_running = 1
 
         return
 
-    def web_command(self, url):
+    def web_command(self, url, qpars=None):
         """
         Parse and execute a command string received as a URL.
         Returns the reply as a JSON packet.
         """
 
         try:
-            obj, method, kwargs = self.parse(url)
+            obj, method, kwargs = self.parse(url, qpars)
 
             # primary object must be in db.remote_tools
             objects = obj.split(".")
@@ -228,13 +234,13 @@ class WebServer(object):
         # generic response
         response = {
             "message": "Finished",
-            "command": urlparse(url).path,
+            "command": url,
             "data": reply,
         }
 
         return response
 
-    def parse(self, url):
+    def parse(self, url, qpars=None):
         """
         Parse URL.
         Return the caller object, method, and keyword arguments.
@@ -244,35 +250,19 @@ class WebServer(object):
         """
 
         # parse URL
-        s = urlparse(url)
-        # remove /api/
-        if s.path.startswith("/api/"):
-            p = s.path[5:]
-        else:
-            raise azcam.AzcamError("Invalid API command: must start with /api/")
+        p = url
 
         try:
             tokens = p.split("/")
         except Exception as e:
-            raise e("Invalid API command")
+            raise e("Invalid API command - parse split")
 
         # get oject and method
         if len(tokens) != 2:
-            raise azcam.AzcamError("Invalid API command")
+            raise azcam.AzcamError("Invalid API command - parse length")
         obj, method = tokens
 
         # get arguments
-        args = s.query.split("&")
-        if args == [""]:
-            kwargs = None
-        else:
-            kwargs = {}
-            for arg1 in args:
-                if "=" in arg1:
-                    arg, par = arg1.split("=")
-                else:
-                    arg = arg1
-                    par = None
-                kwargs[arg] = par
+        kwargs = qpars._dict
 
         return obj, method, kwargs

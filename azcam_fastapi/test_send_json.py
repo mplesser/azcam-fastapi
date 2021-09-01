@@ -1,4 +1,3 @@
-import json
 import requests
 
 data1 = {"tool": "params", "command": "set_par", "args": ["imagetest", 1111], "kwargs": {}}
@@ -12,5 +11,5 @@ data3 = {
     "kwargs": {"parameter": "imagetest", "value": 3333},
 }
 
-r = requests.post("http://localhost:2403/japi", json=data2)
+r = requests.post("http://localhost:2403/japi", json=data3)
 print(r.status_code, r.json())
