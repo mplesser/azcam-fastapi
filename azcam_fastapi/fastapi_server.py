@@ -21,6 +21,7 @@ import threading
 # from flask import Flask, render_template, request, send_from_directory
 import uvicorn
 from fastapi import FastAPI, Request, APIRouter, HTTPException
+from starlette.responses import FileResponse
 
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -71,12 +72,31 @@ class WebServer(object):
 
         # templates folder
         templates = Jinja2Templates(directory=os.path.dirname(self.index))
+        # log_templates = Jinja2Templates(directory=os.path.dirname(azcam.db.logger.logfile))
 
-        # home - /
+        # log folder - /log
+        # app.mount(
+        #     "/logs",
+        #     StaticFiles(directory=os.path.dirname(azcam.db.logger.logfile), html=False),
+        #     name="logs",
+        # )
+
+        # ******************************************************************************
+        # Home - /
+        # ******************************************************************************
         @app.get("/", response_class=HTMLResponse)
         def home(request: Request):
             index = os.path.basename(self.index)
             return templates.TemplateResponse(index, {"request": request, "message": self.message})
+
+        # ******************************************************************************
+        # Log - /log
+        # ******************************************************************************
+        @app.get("/log", response_class=HTMLResponse)
+        def log(request: Request):
+            # logfile = os.path.basename(azcam.db.logger.logfile)
+            logfile = azcam.db.logger.logfile
+            return FileResponse(logfile)
 
         # ******************************************************************************
         # API command - /api/tool/command
