@@ -205,7 +205,7 @@ class WebServer(object):
         # uvicorn.run(self.app)
 
         arglist = [self.app]
-        kwargs = {"port": self.port}
+        kwargs = {"port": self.port, "log_level": "critical"}
 
         thread = threading.Thread(target=uvicorn.run, name="uvicorn", args=arglist, kwargs=kwargs)
         thread.daemon = True  # terminates when main process exits
@@ -249,6 +249,7 @@ class WebServer(object):
                 reply = f"web_command error: {repr(e)}"
         except Exception as e:
             azcam.log(e)
+            print(e)
             reply = f"invalid API command: {url}"
 
         # generic response
