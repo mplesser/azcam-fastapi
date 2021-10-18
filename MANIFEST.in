@@ -1,1 +1,1 @@
-graft static
+graft azcam_fastapi/static
