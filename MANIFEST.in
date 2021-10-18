@@ -1,5 +1,1 @@
-include azcam_webserver/index.html
-include azcam_webserver/static/*
-include azcam_webserver/static/bootstrap/*
-include azcam_webserver/static/bootstrap/css/*
-include azcam_webserver/static/bootstrap/js/*
+graft static
