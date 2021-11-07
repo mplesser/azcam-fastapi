@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setup(
     name="azcam-fastapi",
-    version="21.0.3",
+    version="21.0.4",
     description="azcam extension for fastapi web server",
     long_description=long_description,
     long_description_content_type="text/markdown",
