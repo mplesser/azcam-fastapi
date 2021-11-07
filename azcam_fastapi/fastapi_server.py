@@ -18,7 +18,6 @@ If webserver.return_json is False, then just "data" is returned.
 import os
 import threading
 
-# from flask import Flask, render_template, request, send_from_directory
 import uvicorn
 from fastapi import FastAPI, Request, APIRouter, HTTPException
 from starlette.responses import FileResponse
@@ -71,7 +70,10 @@ class WebServer(object):
         )
 
         # templates folder
-        templates = Jinja2Templates(directory=os.path.dirname(self.index))
+        try:
+            templates = Jinja2Templates(directory=os.path.dirname(self.index))
+        except Exception():
+            pass
         # log_templates = Jinja2Templates(directory=os.path.dirname(azcam.db.logger.logfile))
 
         # log folder - /log
