@@ -1,6 +1,11 @@
 import requests
 
-data1 = {"tool": "params", "command": "set_par", "args": ["imagetest", 1111], "kwargs": {}}
+data1 = {
+    "tool": "params",
+    "command": "set_par",
+    "args": ["imagetest", 1111],
+    "kwargs": {},
+}
 
 data2 = {"tool": "params", "command": "get_par", "args": ["imagetest"], "kwargs": {}}
 

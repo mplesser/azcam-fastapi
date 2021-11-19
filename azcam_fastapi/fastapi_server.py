@@ -89,7 +89,9 @@ class WebServer(object):
         @app.get("/", response_class=HTMLResponse)
         def home(request: Request):
             index = os.path.basename(self.index)
-            return templates.TemplateResponse(index, {"request": request, "message": self.message})
+            return templates.TemplateResponse(
+                index, {"request": request, "message": self.message}
+            )
 
         # ******************************************************************************
         # Log - /log
@@ -209,7 +211,9 @@ class WebServer(object):
         arglist = [self.app]
         kwargs = {"port": self.port, "log_level": "critical"}
 
-        thread = threading.Thread(target=uvicorn.run, name="uvicorn", args=arglist, kwargs=kwargs)
+        thread = threading.Thread(
+            target=uvicorn.run, name="uvicorn", args=arglist, kwargs=kwargs
+        )
         thread.daemon = True  # terminates when main process exits
         thread.start()
 
@@ -236,7 +240,9 @@ class WebServer(object):
             elif len(objects) == 2:
                 objid = getattr(azcam.db.get(objects[0]), objects[1])
             elif len(objects) == 3:
-                objid = getattr(getattr(azcam.db.get(objects[0]), objects[1]), objects[2])
+                objid = getattr(
+                    getattr(azcam.db.get(objects[0]), objects[1]), objects[2]
+                )
             else:
                 objid = None  # too complicated for now
 
