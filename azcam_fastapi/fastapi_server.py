@@ -96,6 +96,10 @@ class WebServer(object):
         # ******************************************************************************
         @app.get("/log", response_class=HTMLResponse)
         def log(request: Request):
+
+            if self.logcommands:
+                azcam.log("received /log comamnd", prefix="Web-> ")
+
             # logfile = os.path.basename(azcam.db.logger.logfile)
             logfile = azcam.db.logger.logfile
             return FileResponse(logfile)
@@ -112,8 +116,13 @@ class WebServer(object):
             url = rest_of_path
             qpars = request.query_params
 
+            print(rest_of_path)
+
             if self.logcommands:
-                if not ("/get_status" in url or "/watchdog" in url):
+                if 0:
+                    if not ("/get_status" in url or "/watchdog" in url):
+                        azcam.log(url, prefix="Web-> ")
+                else:
                     azcam.log(url, prefix="Web-> ")
 
             reply = self.web_command(url, qpars)
