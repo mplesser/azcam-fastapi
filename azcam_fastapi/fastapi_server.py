@@ -235,9 +235,9 @@ class WebServer(object):
         try:
             obj, method, kwargs = self.parse(url, qpars)
 
-            # primary object must be in db.remote_tools
+            # primary object must be in db.tools
             objects = obj.split(".")
-            if objects[0] not in azcam.db.remote_tools:
+            if objects[0] not in azcam.db.tools:
                 raise azcam.AzcamError(f"remote call not allowed in API: {obj}", 4)
 
             if len(objects) == 1:
