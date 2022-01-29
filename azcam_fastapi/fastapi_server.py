@@ -49,7 +49,7 @@ class WebServer(object):
 
         self.is_running = 0
 
-        azcam.db.webserver = self
+        azcam.db.tools["webserver"] = self
 
     def initialize(self):
         """
@@ -241,11 +241,11 @@ class WebServer(object):
                 raise azcam.AzcamError(f"remote call not allowed in API: {obj}", 4)
 
             if len(objects) == 1:
-                objid = azcam.db.get(obj)
+                objid = azcam.db.tools[obj]
             elif len(objects) == 2:
-                objid = getattr(azcam.db.get(objects[0]), objects[1])
+                objid = getattr(azcam.db.tools.get(objects[0]), objects[1])
             elif len(objects) == 3:
-                objid = getattr(getattr(azcam.db.get(objects[0]), objects[1]), objects[2])
+                objid = getattr(getattr(azcam.db.tools.get(objects[0]), objects[1]), objects[2])
             else:
                 objid = None  # too complicated for now
 
