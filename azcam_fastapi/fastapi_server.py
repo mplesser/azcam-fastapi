@@ -116,20 +116,21 @@ class WebServer(object):
             url = rest_of_path
             qpars = request.query_params
 
-            print(rest_of_path)
-
             if self.logcommands:
-                if 0:
+                if self.logstatus:
+                    azcam.log(url, prefix="Web-> ")
+                else:
                     if not ("/get_status" in url or "/watchdog" in url):
                         azcam.log(url, prefix="Web-> ")
-                else:
-                    azcam.log(url, prefix="Web-> ")
 
             reply = self.web_command(url, qpars)
 
             if self.logcommands:
-                if not ("/get_status" in url or "/watchdog" in url):
+                if self.logstatus:
                     azcam.log(reply, prefix="Web->   ")
+                else:
+                    if not ("/get_status" in url or "/watchdog" in url):
+                        azcam.log(reply, prefix="Web->   ")
 
             return JSONResponse(reply)
 
