@@ -92,28 +92,15 @@ class WebServer(object):
             return templates.TemplateResponse(index, {"request": request, "message": self.message})
 
         # ******************************************************************************
-        # Log - /log
-        # ******************************************************************************
-        @app.get("/log", response_class=HTMLResponse)
-        def log(request: Request):
-
-            if self.logcommands:
-                azcam.log("received /log comamnd", prefix="Web-> ")
-
-            # logfile = os.path.basename(azcam.db.logger.logfile)
-            logfile = azcam.db.logger.logfile
-            return FileResponse(logfile)
-
-        # ******************************************************************************
         # API command - /api/tool/command
         # ******************************************************************************
-        @app.get("/api/{rest_of_path:path}", response_class=JSONResponse)
-        def api(request: Request, rest_of_path: str):
+        @app.get("/api/{command:path}", response_class=JSONResponse)
+        def api(request: Request, command: str):
             """
             Remote web api commands. such as: /api/expose or /api/exposure/reset
             """
 
-            url = rest_of_path
+            url = command
             qpars = request.query_params
 
             if self.logcommands:
@@ -135,7 +122,7 @@ class WebServer(object):
             return JSONResponse(reply)
 
         # ******************************************************************************
-        # JSON API command - .../api/tool/command
+        # JSON API command - .../japi/tool/command
         # ******************************************************************************
         @app.post("/japi", response_class=JSONResponse)
         async def japi(request: Request):
@@ -145,12 +132,17 @@ class WebServer(object):
 
             args = await request.json()
 
-            toolid = getattr(azcam.db, args["tool"])
-            command = getattr(toolid, args["command"])
+            # print("args", args)
 
-            arglist = args["args"]
-            kwargs = args["kwargs"]
-            reply = command(*arglist, **kwargs)
+            try:
+                toolid = azcam.db.tools[args["tool"]]
+                command = getattr(toolid, args["command"])
+
+                arglist = args["args"]
+                kwargs = args["kwargs"]
+                reply = command(*arglist, **kwargs)
+            except Exception as e:
+                print(e)
 
             response = {
                 "message": "Finished",
