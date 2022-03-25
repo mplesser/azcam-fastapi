@@ -3,7 +3,7 @@ Configure and start fastapi application using uvicorn.
 Import this after all configuration has been completed.
 All API commands suported here must start with ""http://locahost:2402/api/".
 
-URL example: "http://locahost:2402/api/instrument/set_filter?filter=1&filter_id=2"
+URL example: "http://localhost:2402/api/instrument/set_filter?filter=1&filter_id=2"
 
 Default response is JSON:
     response = {
@@ -209,7 +209,7 @@ class WebServer(object):
         # uvicorn.run(self.app)
 
         arglist = [self.app]
-        kwargs = {"port": self.port, "log_level": "critical"}
+        kwargs = {"port": self.port, "host": "0.0.0.0", "log_level": "critical"}
 
         thread = threading.Thread(target=uvicorn.run, name="uvicorn", args=arglist, kwargs=kwargs)
         thread.daemon = True  # terminates when main process exits
