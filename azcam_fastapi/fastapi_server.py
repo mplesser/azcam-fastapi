@@ -38,11 +38,13 @@ class WebServer(object):
 
         self.templates_folder = ""
         self.index = "index.html"
-        self.upload_folder = ""
+        self.upload_folder = None
 
         self.logcommands = 0
         self.logstatus = 0
         self.message = ""  # customized message
+        self.datafolder = None
+        self.return_json = 0
 
         # port for webserver
         self.port = None
@@ -60,14 +62,18 @@ class WebServer(object):
         app = FastAPI()
         self.app = app
 
-        self.root_folder = os.path.dirname(__file__)
+        if self.datafolder is None:
+            self.datafolder = os.path.dirname(__file__)
+
+        if self.upload_folder is None:
+            self.upload_folder = os.path.join(self.datafolder, "uploads")
 
         # static folder - /static
-        app.mount(
-            "/static",
-            StaticFiles(directory=os.path.join(self.root_folder, "static")),
-            name="static",
-        )
+        # app.mount(
+        #     "/static",
+        #     StaticFiles(directory=os.path.join(self.datafolder, "static")),
+        #     name="static",
+        # )
 
         # templates folder
         try:
